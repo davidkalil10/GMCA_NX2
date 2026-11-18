@@ -29,9 +29,13 @@ apply_patch_if_needed "$ROOT_DIR/scripts/patches/borealis-fixes.patch"
 apply_patch_if_needed "$ROOT_DIR/scripts/patches/borealis-switch2.patch"
 
 BUILD_DIR="$ROOT_DIR/build/switch2"
-FFMPEG_VER="7.1.4"
+FFMPEG_VER="7.1"
 FFMPEG_URL="https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VER}.tar.xz"
-FFMPEG_SHA256="71f4aac3573ed9060489cb62526a6c7dda815ae10993789611acd7be9fa9fbf4"
+FFMPEG_SHA256="40973d44970dbc83ef302b0609f2e74982be2d85916dd2ee7472d30678a7abe6"
+FFMPEG_PATCH_BASE="https://raw.githubusercontent.com/devkitPro/pacman-packages/e09c9f0d0f3e19e25bc75f78481959b658df6d4d/switch/ffmpeg"
+FFMPEG_PATCH_FALLBACK="https://raw.githubusercontent.com/devkitPro/pacman-packages/master/switch/ffmpeg"
+FFMPEG_PATCH_SHA256="1792380b992e3554a4abcddf0d7b395bfd8c118ac7c6e38c8f2fb0d39753a390"
+TLS_PATCH_SHA256="57ea7ec8ed26d13d3172d0fd589b7883d22f0c180d50b7434fcc73fb2b3ab7d7"
 
 FFMPEG_WORK="$BUILD_DIR/ffmpeg-src"
 FFMPEG_BUILD="$BUILD_DIR/ffmpeg-build"
@@ -40,30 +44,38 @@ JOBS="${GMCA_BUILD_JOBS:-$(nproc)}"
 
 fetch_verified() {
   local url="$1"
-  local dest="$2"
-  local expected_sha="$3"
+  local fallback="$2"
+  local dest="$3"
+  local expected_sha="$4"
   if [[ -f "$dest" ]] && echo "${expected_sha}  ${dest}" | sha256sum -c - >/dev/null 2>&1; then
     return 0
   fi
   rm -f "$dest"
-  curl -fsSL --retry 3 -o "$dest" "$url"
+  if ! curl -fsSL -o "$dest" "$url"; then
+    if [[ -n "$fallback" ]]; then
+      curl -fsSL -o "$dest" "$fallback"
+    else
+      return 1
+    fi
+  fi
   echo "${expected_sha}  ${dest}" | sha256sum -c -
 }
 
-# Build clean FFmpeg 7.1.4 archives for Switch 2 (same patches as scripts/switch/ffmpeg/PKGBUILD,
-# compiled against libounce for Cortex-A78C with --disable-nvtegra).
+# Build clean FFmpeg 7.1 archives for Switch 2 (same Horizon + tls_libnx ABI
+# expected by official devkitPro switch-libmpv, compiled against libounce with --disable-nvtegra).
 if [[ ! -f "$FFMPEG_PREFIX/lib/libavcodec.a" ]] || [[ ! -f "$FFMPEG_PREFIX/lib/libavutil.a" ]] || [[ ! -f "$FFMPEG_PREFIX/lib/libavfilter.a" ]]; then
   echo "==> Building clean Switch 2 FFmpeg ${FFMPEG_VER} (--disable-nvtegra)..."
   rm -rf "$FFMPEG_WORK" "$FFMPEG_BUILD"
   mkdir -p "$FFMPEG_WORK" "$FFMPEG_BUILD" "$FFMPEG_PREFIX"
 
-  fetch_verified "$FFMPEG_URL" "$FFMPEG_WORK/ffmpeg-${FFMPEG_VER}.tar.xz" "$FFMPEG_SHA256"
+  fetch_verified "$FFMPEG_URL" "" "$FFMPEG_WORK/ffmpeg-${FFMPEG_VER}.tar.xz" "$FFMPEG_SHA256"
+  fetch_verified "${FFMPEG_PATCH_BASE}/ffmpeg-${FFMPEG_VER}.patch" "${FFMPEG_PATCH_FALLBACK}/ffmpeg-${FFMPEG_VER}.patch" "$FFMPEG_WORK/ffmpeg-${FFMPEG_VER}.patch" "$FFMPEG_PATCH_SHA256"
+  fetch_verified "${FFMPEG_PATCH_BASE}/tls.patch" "${FFMPEG_PATCH_FALLBACK}/tls.patch" "$FFMPEG_WORK/tls.patch" "$TLS_PATCH_SHA256"
 
   tar -xJf "$FFMPEG_WORK/ffmpeg-${FFMPEG_VER}.tar.xz" -C "$FFMPEG_WORK"
   FFMPEG_SRC="$FFMPEG_WORK/ffmpeg-${FFMPEG_VER}"
-  patch -d "$FFMPEG_SRC" -Np1 -i "$ROOT_DIR/scripts/switch/ffmpeg/ffmpeg-${FFMPEG_VER}.patch"
-  patch -d "$FFMPEG_SRC" -Np1 -i "$ROOT_DIR/scripts/switch/ffmpeg/getnameinfo.patch"
-  patch -d "$FFMPEG_SRC" -Np1 -i "$ROOT_DIR/scripts/switch/ffmpeg/avio.patch"
+  patch -d "$FFMPEG_SRC" -Np1 -i "$FFMPEG_WORK/ffmpeg-${FFMPEG_VER}.patch"
+  patch -d "$FFMPEG_SRC" -Np1 -i "$FFMPEG_WORK/tls.patch"
   chmod +x "$FFMPEG_SRC/configure"
   find "$FFMPEG_SRC" -name '*.sh' -exec chmod +x {} +
 
@@ -90,22 +102,23 @@ if [[ ! -f "$FFMPEG_PREFIX/lib/libavcodec.a" ]] || [[ ! -f "$FFMPEG_PREFIX/lib/l
       --disable-autodetect \
       --enable-asm \
       --enable-neon \
-      --enable-mbedtls \
-      --enable-version3 \
       --disable-avdevice \
       --disable-encoders \
       --disable-muxers \
+      --enable-avfilter \
       --enable-swscale \
       --enable-swresample \
       --enable-network \
-      --enable-libssh2 \
+      --disable-protocols \
+      --enable-protocol=file,http,https,ftp,tcp,udp,rtmp,rtmpt,hls,crypto,tls,httpproxy \
       --enable-zlib \
       --enable-bzlib \
       --enable-libass \
+      --enable-libfreetype \
+      --enable-libfribidi \
       --enable-libdav1d \
-      --disable-nvtegra \
-      --disable-filters \
-      --enable-filter=hflip,vflip,transpose
+      --enable-libnx \
+      --disable-nvtegra
     make -j"$JOBS"
     make install
   )

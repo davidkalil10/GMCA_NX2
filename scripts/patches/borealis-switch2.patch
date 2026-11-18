@@ -403,3 +403,40 @@ index 7729f007..a13c52c3 100644
  } // namespace brls
 +
 +#endif // !__SWITCH2__
+diff --git a/library/lib/core/thread.cpp b/library/lib/core/thread.cpp
+--- a/library/lib/core/thread.cpp
++++ b/library/lib/core/thread.cpp
+@@ -201,7 +201,18 @@ void* Threading::task_loop(void* a)
+ 
+         for (auto task : m_tasks_copy)
+         {
+-            task();
++            try
++            {
++                task();
++            }
++            catch (const std::exception& e)
++            {
++                brls::Logger::error("error: async task: {}", e.what());
++            }
++            catch (...)
++            {
++                brls::Logger::error("error: async task: unknown exception");
++            }
+         }
+ 
+         retro_sleep(500);
+@@ -214,7 +225,11 @@ void Threading::start_task_loop()
+ #ifdef BOREALIS_USE_STD_THREAD
+     task_loop_thread = new std::thread(std_task_loop);
+ #else
+-    pthread_create(&task_loop_thread, NULL, task_loop, NULL);
++    pthread_attr_t attr;
++    pthread_attr_init(&attr);
++    pthread_attr_setstacksize(&attr, 2 * 1024 * 1024);
++    pthread_create(&task_loop_thread, &attr, task_loop, NULL);
++    pthread_attr_destroy(&attr);
+ #endif
+ }
+ 
+

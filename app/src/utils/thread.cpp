@@ -26,7 +26,11 @@ void ThreadPool::start(size_t num) {
         Thread th = std::make_shared<std::thread>(task_loop, this);
 #else
         Thread th = 0;
-        pthread_create(&th, nullptr, task_loop, this);
+        pthread_attr_t attr;
+        pthread_attr_init(&attr);
+        pthread_attr_setstacksize(&attr, 2 * 1024 * 1024);
+        pthread_create(&th, &attr, task_loop, this);
+        pthread_attr_destroy(&attr);
 #endif
         std::lock_guard<std::mutex> locker(this->threadMutex);
         this->threads.push_back(th);

@@ -1,4 +1,5 @@
 #include <borealis.hpp>
+#include <filesystem>
 
 #include "utils/config.hpp"
 #include "utils/download.hpp"
@@ -92,6 +93,17 @@ static void proposeForwarderInstall() {
 int main(int argc, char* argv[]) {
 #ifdef __SWITCH__
     if (argc > 0 && argv[0]) AppVersion::nro_path = argv[0];
+#endif
+#ifdef __SWITCH2__
+    {
+        std::filesystem::create_directories("sdmc:/switch/GMCA");
+        FILE* logFile = std::fopen("sdmc:/switch/GMCA/gmca-switch2.log", "w+");
+        if (logFile) {
+            std::setvbuf(logFile, nullptr, _IOLBF, 0);
+            brls::Logger::setLogOutput(logFile);
+            brls::Logger::setLogLevel(brls::LogLevel::LOG_DEBUG);
+        }
+    }
 #endif
 #ifdef __PS4__
     // A send on a socket the server already closed raises SIGPIPE, whose default

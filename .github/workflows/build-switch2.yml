@@ -31,14 +31,11 @@ jobs:
       - name: Install Switch portlibs and ounce-devkit (20261115b)
         run: |
           for attempt in 1 2 3 4 5; do
-            if dkp-pacman -Sy --noconfirm --needed switch-dev switch-portlibs switch-libmpv switch-curl switch-libwebp switch-glfw switch-mesa; then
+            if dkp-pacman -Sy --noconfirm --needed switch-dev switch-portlibs switch-libmpv switch-ffmpeg switch-curl switch-libwebp switch-glfw switch-mesa; then
               break
             fi
             echo "dkp-pacman attempt $attempt failed; retrying in $((attempt * 10))s..."
             sleep $((attempt * 10))
-          done
-          for pkg in mbedtls-3.6.7-1 libssh2-1.11.1-1 dav1d-1.5.4-1 curl-8.16.0-3 ffmpeg-7.1.5-5 libmpv-0.36.0-5; do
-            dkp-pacman --noconfirm -U "$DEPS_URL/switch-${pkg}-any.pkg.tar.zst"
           done
           sdk="$(mktemp -d)"
           git clone https://github.com/ouncebrew/ounce-devkit.git "$sdk"
@@ -46,11 +43,11 @@ jobs:
           bash "$sdk/install.sh" "20261115b"
           rm -rf "$sdk"
 
-      - name: Cache Switch 2 FFmpeg 7.1.4 (--disable-nvtegra)
+      - name: Cache Switch 2 FFmpeg 7.1 (--disable-nvtegra)
         uses: actions/cache@v4
         with:
           path: build/switch2/ffmpeg-install
-          key: gmca-switch2-ffmpeg-7.1.4-v1-${{ hashFiles('scripts/build-switch2.sh') }}
+          key: gmca-switch2-ffmpeg-7.1-v2-${{ hashFiles('scripts/build-switch2.sh') }}
 
       - name: Build and verify Switch 2 NRO
         run: bash scripts/build-switch2.sh
