@@ -2,25 +2,23 @@
 
 <img src="site/assets/img/gmca-logo.webp" alt="GMCA" width="132">
 
-# GMCA — Gamepad Media Center Aggregator
+# GMCA NX2 — Gamepad Media Center Aggregator (Nintendo Switch 2 & Switch 1)
+
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20this%20project-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/davidkalil10)
 
 */ˌdʒiː.ɛm.siː.ˈeɪ/ — Gamepad Media Center Aggregator*
 
 **🎮 📺 — every media server, on the screens you forgot.**
 
 GMCA is one native, controller-first **client**. Point it at any **media center** —
-**Plex, Jellyfin, Emby or Stremio** — and run it on any **device** you left in a drawer:
-**Nintendo Switch**, **PS Vita** or a **Raspberry Pi wired to the TV**. The interface never
+**Plex, Jellyfin, Emby or Stremio** — and run it on **Nintendo Switch 2** (`kaiHEN` / `ounce-hbmenu`),
+**Nintendo Switch 1**, **PS Vita** or a **Raspberry Pi wired to the TV**. The interface never
 changes; only the accent colour and the tabs follow your server. Also runs on Windows, macOS, Linux and PS4.
 
-[![build](https://github.com/thcolin/gamepad-media-center-aggregator/actions/workflows/build.yaml/badge.svg)](https://github.com/thcolin/gamepad-media-center-aggregator/actions/workflows/build.yaml)
-[![NS](https://img.shields.io/badge/-Nintendo%20Switch-e4000f?style=flat&logo=Nintendo%20Switch)](https://github.com/thcolin/gamepad-media-center-aggregator/releases/latest)
-[![PSVita](https://img.shields.io/badge/-PSVita-003791?style=flat&logo=PlayStation)](https://github.com/thcolin/gamepad-media-center-aggregator/releases/latest)
-[![download](https://img.shields.io/github/downloads/thcolin/gamepad-media-center-aggregator/total?label=downloads)](https://github.com/thcolin/gamepad-media-center-aggregator/releases/latest)
-[![nightly](https://img.shields.io/badge/nightly-build-green)](https://nightly.link/thcolin/gamepad-media-center-aggregator/workflows/build.yaml/dev)
-[![sponsor](https://img.shields.io/badge/sponsor-%E2%9D%A4-db61a2)](https://github.com/sponsors/thcolin)
-
 </div>
+
+> **Nintendo Switch 2 Port (`ounce-devkit` / `libounce` + `OunceVK`):** Adapted and maintained by **David Kalil Braga** ([@davidkalil10](https://github.com/davidkalil10)).
+> Special thanks to **[thcolin](https://github.com/thcolin)**, creator of the original **[GMCA (`gamepad-media-center-aggregator`)](https://github.com/thcolin/gamepad-media-center-aggregator)** project.
 
 > [!NOTE]
 > GMCA is the multi-backend evolution of **pleNx** (a native Plex client), itself a fork of
@@ -224,16 +222,21 @@ pleNx → GMCA transition in [GMCA_MIGRATION.md](GMCA_MIGRATION.md).
 
 ## Support
 
-If GMCA is useful to you, consider [sponsoring the project](https://github.com/sponsors/thcolin) —
-it directly funds development time and devices to test on.
+If you find **GMCA NX2** and our Nintendo Switch 2 homebrew ports useful, consider buying me a coffee to support continued development and maintenance:
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/davidkalil10)
+
+👉 **[https://ko-fi.com/davidkalil10](https://ko-fi.com/davidkalil10)**
 
 ## Acknowledgements
 
 GMCA stands on the shoulders of the homebrew and open-source community:
 
+- **[@thcolin](https://github.com/thcolin)** for creating and maintaining the original [GMCA (`gamepad-media-center-aggregator`)](https://github.com/thcolin/gamepad-media-center-aggregator) project
+- **David Kalil Braga ([@davidkalil10](https://github.com/davidkalil10))** for the Nintendo Switch 2 (`libounce` + `OunceVK`) port
 - **[@dragonflylee](https://github.com/dragonflylee)** for [Switchfin](https://github.com/dragonflylee/switchfin), the Jellyfin client this is forked from
 - **[@xfangfang](https://github.com/xfangfang)** for [wiliwili](https://github.com/xfangfang/wiliwili)
 - [@natinusala](https://github.com/natinusala) and XITRIX for [borealis](https://github.com/natinusala/borealis)
-- [@devkitPro](https://github.com/devkitPro) and switchbrew for [libnx](https://github.com/switchbrew/libnx)
+- [@devkitPro](https://github.com/devkitPro), switchbrew for [libnx](https://github.com/switchbrew/libnx), and [ouncebrew](https://github.com/ouncebrew) for `libounce`, `OunceVK`, and `ounce-devkit`
 - [@proconsule](https://github.com/proconsule) for [nxmp](https://github.com/proconsule/nxmp)
 - [@averne](https://github.com/averne) for the [FFmpeg](https://github.com/averne/FFmpeg) hwaccel backend and the deko3d backend of mpv

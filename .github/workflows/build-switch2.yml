@@ -1,0 +1,118 @@
+name: Build GMCA (Switch 1 & Switch 2)
+
+on:
+  push:
+    branches: [ dev, main, master ]
+    tags: [ "v*" ]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  DEPS_URL: https://github.com/thcolin/gamepad-media-center-aggregator/releases/download/ci-deps
+
+jobs:
+  build-switch2:
+    name: Switch 2 (libounce + OunceVK)
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkita64:20260219
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure git safe.directory
+        run: git config --global --add safe.directory '*'
+
+      - name: Install Switch portlibs and ounce-devkit (20261115b)
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if dkp-pacman -Sy --noconfirm --needed switch-dev switch-portlibs switch-libmpv switch-curl switch-libwebp switch-glfw switch-mesa; then
+              break
+            fi
+            echo "dkp-pacman attempt $attempt failed; retrying in $((attempt * 10))s..."
+            sleep $((attempt * 10))
+          done
+          for pkg in mbedtls-3.6.7-1 libssh2-1.11.1-1 dav1d-1.5.4-1 curl-8.16.0-3 ffmpeg-7.1.5-5 libmpv-0.36.0-5; do
+            dkp-pacman --noconfirm -U "$DEPS_URL/switch-${pkg}-any.pkg.tar.zst"
+          done
+          sdk="$(mktemp -d)"
+          git clone https://github.com/ouncebrew/ounce-devkit.git "$sdk"
+          git -C "$sdk" checkout 0f38ba80d7ee768c5749278f127749d14ece2036
+          bash "$sdk/install.sh" "20261115b"
+          rm -rf "$sdk"
+
+      - name: Cache Switch 2 FFmpeg 7.1.4 (--disable-nvtegra)
+        uses: actions/cache@v4
+        with:
+          path: build/switch2/ffmpeg-install
+          key: gmca-switch2-ffmpeg-7.1.4-v1-${{ hashFiles('scripts/build-switch2.sh') }}
+
+      - name: Build and verify Switch 2 NRO
+        run: bash scripts/build-switch2.sh
+
+      - name: Upload Switch 2 NRO artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GMCA-switch2-nro
+          path: |
+            build/switch2/GMCA-switch2.nro
+            build/switch2/GMCA.nro
+          if-no-files-found: error
+
+  build-switch1:
+    name: Switch 1 (libnx + deko3d)
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkita64:20260219
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure git safe.directory
+        run: git config --global --add safe.directory '*'
+
+      - name: Apply Borealis patches
+        run: git -C library/borealis apply --verbose ../../scripts/patches/borealis-fixes.patch
+
+      - name: Install Switch 1 dependencies
+        run: |
+          sleep 15
+          dkp-pacman --noconfirm -R switch-libmpv || true
+          dkp-pacman --noconfirm -U "$DEPS_URL/libuam-master-1-any.pkg.tar.zst"
+          dkp-pacman --noconfirm -U "$DEPS_URL/hacBrewPack-3.05-1-x86_64.pkg.tar.zst"
+          for pkg in mbedtls-3.6.7-1 libssh2-1.11.1-1 dav1d-1.5.4-1 curl-8.16.0-3 ffmpeg-7.1.5-5 libmpv-deko3d-0.36.0-5 nspmini-main-1; do
+            dkp-pacman --noconfirm -U "$DEPS_URL/switch-${pkg}-any.pkg.tar.zst"
+          done
+          git clone https://github.com/DarkMatterCore/libusbhsfs.git --depth=1
+          make -C libusbhsfs BUILD_TYPE=GPL install -j"$(nproc)"
+
+      - name: Build Switch 1 NRO
+        run: |
+          cmake -B build-switch1 \
+            -DUSE_DEKO3D=ON \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DPLATFORM_SWITCH=ON \
+            -DUSE_LIBUSBHSFS=ON \
+            -DBUILTIN_NSP=ON \
+            -DVERSION_BUILD=${{ github.run_number }}
+          make -C build-switch1 GMCA.nro -j"$(nproc)"
+          cp -f build-switch1/GMCA.nro build-switch1/GMCA-switch1.nro
+
+      - name: Upload Switch 1 NRO artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GMCA-switch1-nro
+          path: |
+            build-switch1/GMCA-switch1.nro
+            build-switch1/GMCA.nro
+          if-no-files-found: error

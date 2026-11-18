@@ -30,6 +30,8 @@ extern std::unique_ptr<brls::D3D11Context> D3D11_CONTEXT;
 #else
 #ifdef __SDL2__
 #include <SDL2/SDL.h>
+#elif defined(__SWITCH2__)
+#include <EGL/egl.h>
 #else
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -44,6 +46,8 @@ static void *get_proc_address(void *unused, const char *name) {
 #ifdef __SDL2__
     SDL_GL_GetCurrentContext();
     return (void *)SDL_GL_GetProcAddress(name);
+#elif defined(__SWITCH2__)
+    return (void *)eglGetProcAddress(name);
 #else
     glfwGetCurrentContext();
     return (void *)glfwGetProcAddress(name);
@@ -195,7 +199,12 @@ void MPVCore::init() {
         mpv_set_option_string(mpv, "cache", "no");
     }
     // Making the loading process faster
-#if defined(__SWITCH__)
+#if defined(__SWITCH2__)
+    mpv_set_option_string(mpv, "vd-lavc-dr", "yes");
+    mpv_set_option_string(mpv, "vd-lavc-threads", "4");
+    mpv_set_option_string(mpv, "opengl-es", "yes");
+    mpv_set_option_string(mpv, "opengl-glfinish", "yes");
+#elif defined(__SWITCH__)
     mpv_set_option_string(mpv, "vd-lavc-dr", "yes");
     mpv_set_option_string(mpv, "vd-lavc-threads", "3");
     // This should fix random crash, but I don't know why.
